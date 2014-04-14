@@ -5,8 +5,8 @@
 
 
 (def today (t/now))
-(def yesterday (do (.add cal java.util.Calendar/DATE -1) (.getTime cal)))
-(def tomorrow (do (.add cal java.util.Calendar/DATE 2) (.getTime cal)))
+(def yesterday (t/minus today (t/days 1)))
+(def tomorrow (t/plus today (t/days 1)))
 
 (comment
   (defn one [] 1)
@@ -25,8 +25,25 @@
                (< d3 d4))
         (println "DSL works correctly")))))
 
-(defn date? [d]
+(defn- date? [d]
   (instance? org.joda.time.DateTime d))
+
+(defn- period-to-func [period]
+  (cond
+    (or (= period 'second)
+        (= period 'seconds)) `(t/seconds)
+    (or (= period 'minute)
+        (= period 'minutes)) `(t/minutes)
+    (or (= period 'hour)
+        (= period 'hours)) `(t/hours)
+    (or (= period 'day)
+        (= period 'days)) `(t/days)
+    (or (= period 'week)
+        (= period 'weeks)) `(t/weeks)
+    (or (= period 'month)
+        (= period 'months)) `(t/months)
+    (or (= period 'year)
+        (= period 'years)) `(t/years)))
 ;; Поддерживаемые операции:
 ;; > >= < <=
 ;; Функция принимает на вход три аргумента. Она должна определить,
@@ -58,7 +75,9 @@
 ;; И так далее.
 ;; Результат работы функции - новая дата, получаемая из календаря так: (.getTime cal)
 (defn d-add [date op num period]
-  :ImplementMe!)
+  (let [effective-num (if (= op '+) num (- num))
+        func (period-to-func period)]
+    `(c/to-long( t/plus ~date (~@func ~effective-num)))))
 
 ;; Можете использовать эту функцию для того, чтобы определить,
 ;; является ли список из 4-х элементов тем самым списком, который создает новую дату,
