@@ -1,14 +1,16 @@
 (ns dsl.core
-  (:use clojure.walk))
+  (:use clojure.walk)
+  (:require [clj-time.core :as t]
+            [clj-time.coerce :as c]))
 
-(def cal (java.util.Calendar/getInstance))
-(def today (java.util.Date.))
+
+(def today (t/now))
 (def yesterday (do (.add cal java.util.Calendar/DATE -1) (.getTime cal)))
 (def tomorrow (do (.add cal java.util.Calendar/DATE 2) (.getTime cal)))
 
 (comment
   (defn one [] 1)
-  
+
   ;; Примеры вызова
   (with-datetime
     (if (> today tomorrow) (println "Time goes wrong"))
@@ -23,7 +25,8 @@
                (< d3 d4))
         (println "DSL works correctly")))))
 
-
+(defn date? [d]
+  (instance? org.joda.time.DateTime d))
 ;; Поддерживаемые операции:
 ;; > >= < <=
 ;; Функция принимает на вход три аргумента. Она должна определить,
@@ -32,7 +35,12 @@
 ;; Если получены не даты, то выполнить операцию op в обычном порядке:
 ;; (op d1 d2).
 (defn d-op [op d1 d2]
-  :ImplementMe!)
+  (let [date-allowed-ops #{'> '< '>= '<=}]
+    `(if (and (~date-allowed-ops ~op)
+              (date? ~d1)
+              (date? ~d2))
+      (~op (c/to-long ~d1) (c/to-long ~d2))
+      (~op ~d1 ~d2))))
 
 ;; Пример вызова:
 ;; (d-add today '+ 1 'day)
