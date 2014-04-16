@@ -1,6 +1,8 @@
 (ns dsl.core-test
   (:require [clojure.test :refer :all]
-            [dsl.core :refer :all]))
+            [dsl.core :refer :all]
+            [clj-time.core :as t]
+            [clj-time.coerce :as c]))
 
 (deftest comparisons
   (testing "> < >= <="
@@ -16,18 +18,17 @@
           (> 2 1)))))
 
 (deftest additions
-  (let [cal (java.util.Calendar/getInstance)
-        today (java.util.Date.)
-        yesterday (do (.add cal java.util.Calendar/DATE -1) (.getTime cal))
-        tomorrow (do (.add cal java.util.Calendar/DATE 2) (.getTime cal))
+  (let [today (t/now)
+        yesterday (t/minus today (t/days 1))
+        tomorrow  (t/plus today (t/days 1))
         one (fn [] 1)]
     (testing "+ -"
-      (is (> (.getTime today)
-             (.getTime (with-datetime
+      (is (> (c/to-long today)
+             (c/to-long (with-datetime
                          (and 1 2 3)
                          (today - 2 days)))))
-      (is (< (.getTime today)
-             (.getTime (with-datetime
+      (is (< (c/to-long today)
+             (c/to-long (with-datetime
                          (today + 1 month)))))
       (is (with-datetime
             (if (> today tomorrow) (println "Time goes wrong"))
